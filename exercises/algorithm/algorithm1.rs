@@ -2,7 +2,6 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -70,14 +69,62 @@ impl<T> LinkedList<T> {
         }
     }
 	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
+	where T: PartialOrd,
 	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+        let mut merged = LinkedList::new();
+        let mut a_current = list_a.start;
+        let mut b_current = list_b.start;
+
+        loop {
+            match (a_current, b_current) {
+                (Some(a_node), Some(b_node)) => {
+                    let a_val = unsafe { &(*a_node.as_ptr()).val };
+                    let b_val = unsafe { &(*b_node.as_ptr()).val };
+                    if a_val <= b_val {
+                        let next = unsafe { (*a_node.as_ptr()).next };
+                        merged.add_node(a_node);
+                        a_current = next;
+                    } else {
+                        let next = unsafe { (*b_node.as_ptr()).next };
+                        merged.add_node(b_node);
+                        b_current = next;
+                    }
+                }
+                _ => break,
+            }
         }
+
+        // Append remaining nodes from a
+        while let Some(node) = a_current {
+            let next = unsafe { (*node.as_ptr()).next };
+            merged.add_node(node);
+            a_current = next;
+        }
+
+        // Append remaining nodes from b
+        while let Some(node) = b_current {
+            let next = unsafe { (*node.as_ptr()).next };
+            merged.add_node(node);
+            b_current = next;
+        }
+        merged
 	}
+	fn add_node(&mut self, node_ptr: NonNull<Node<T>>) {
+        unsafe {
+            (*node_ptr.as_ptr()).next = None;
+        }
+        match self.end {
+            None => {
+                self.start = Some(node_ptr);
+                self.end = Some(node_ptr);
+            }
+            Some(end_ptr) => unsafe {
+                (*end_ptr.as_ptr()).next = Some(node_ptr);
+                self.end = Some(node_ptr);
+            },
+        }
+        self.length += 1;
+    }
 }
 
 impl<T> Display for LinkedList<T>
